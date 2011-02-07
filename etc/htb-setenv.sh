@@ -102,6 +102,16 @@ else
     unset HTB_TTY
   fi
 
+  # less can be configured to open .gz files and the like via the utility
+  # lesspipe. If invoked without any parameters, lesspipe prints out a few
+  # environment variables so that less will correctly use lesspipe.
+  if test -z "$LESSOPEN"; then
+    type lesspipe >/dev/null 2>&1
+    if test $? -eq 0; then
+      eval $(lesspipe)
+    fi
+  fi
+
   # Turn off automatic export of environment variables
   set +a
 fi  # if test -z "$HTB_ENVIRONMENT_INCLUDED"; then
