@@ -46,8 +46,10 @@ else
   if test -z "$(echo $PATH | fgrep "$HTB_BIN_DIR")"; then
     PATH="$HTB_BIN_DIR:$PATH"
   fi
-  if test -z "$(echo $PATH | fgrep "$HTB_SBIN_DIR")"; then
-    PATH="$HTB_SBIN_DIR:$PATH"
+  if test $(id -u) -eq 0; then
+    if test -z "$(echo $PATH | fgrep "$HTB_SBIN_DIR")"; then
+      PATH="$HTB_SBIN_DIR:$PATH"
+    fi
   fi
 
   # The PAGER variable is used by man and other utilities for paginating
