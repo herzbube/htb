@@ -2754,12 +2754,15 @@ HANDGUN.TRIGGER and SQUEEZE. THEN return HANDGUN to HOLSTER. CHECK whether
 shoelace needs to be re-tied.
 
 LISP
-You shoot yourself in the appendage which holds the gun with which you shoot
-yourself in the appendage which holds the gun with which you shoot yourself
-in the appendage which holds the gun with which you shoot yourself in the
-appendage which holds the gun with which you shoot yourself in the appendage
-which holds the gun with which you shoot yourself in the appendage which
-holds...
+You shoot yourself in the appendage which holds the gun with
+which you shoot yourself in the appendage which holds the gun with
+which you shoot yourself in the appendage which holds the gun with
+which you shoot yourself in the appendage which holds the gun with
+which you shoot yourself in the appendage which holds the gun with
+which you shoot yourself in the appendage which holds...
+
+Scheme
+As Lisp, but none of the other appendages are aware of this happening.
 
 FORTH
 Foot in yourself shoot.
@@ -2769,16 +2772,20 @@ You tell your program that you want to be shot in the foot. The program
 figures out how to do it, but the syntax doesn't permit it to explain it to
 you.
 
-BASIC
-Shoot yourself in the foot with a water pistol. On large systems, continue
-until entire lower body is waterlogged.
+Basic (interpreted)
+You shoot yourself in the foot with a water pistol until your foot is
+waterlogged and rots off. 
+
+Basic (compiled)
+You shoot yourself in the foot with a BB using a SCUD missile launcher.
 
 Visual Basic
 You'll really only _appear_ to have shot yourself in the foot, but you'll
 have had so much fun doing it that you won't care.
 
 HyperTalk
-Put the first bullet of gun into foot left of leg of you. Answer the result.
+Put the first bullet of the gun into the foot left of leg of you. Answer
+the result.
 
 Motif
 You spend days writing a UIL description of your foot, the bullet, its
@@ -2790,14 +2797,15 @@ You shoot yourself in the foot, then spend all day figuring out how to do it
 in fewer characters.
 
 SNOBOL
-If you succeed, shoot yourself in the left foot. If you fail, shoot yourself
-in the right foot.
+If you succeed, shoot yourself in the left foot.
+If you fail, shoot yourself in the right foot.
 
 UNIX
 (The way most UNIX hackers shoot themselves in the foot.)
-% ls foot.c foot.h foot.o toe.c toe.o
+% ls
+foot.c foot.h foot.o toe.c toe.o
 % rm * .o
-rm:.o no such file or directory
+rm: .o: No such file or directory
 % ls
 %
 
@@ -2827,6 +2835,97 @@ language, you shoot yourself in the head.
 Assembler
 You try to shoot yourself in the foot, only to discover you must first
 invent the gun, the bullet, the trigger, and your foot.
+
+XBase
+Shooting yourself is no problem. If you want to shoot yourself in the foot,
+you'll have to use Clipper.
+
+csh
+After searching the manual until your foot falls asleep, you shoot the
+computer and switch to C. 
+
+PL/1
+After consuming all system resources including bullets, the data processing
+department doubles its size, acquires 2 new mainframes and drops the
+original on your foot.
+
+Smalltalk
+You send the message shoot to gun, with selectors bullet and myFoot. A window
+pops up saying Gunpowder doesNotUnderstand: spark. After several fruitless
+hours spent browsing the methods for Trigger, FiringPin  and IdealGas, you
+take the easy way out and create ShotFoot, a subclass of Foot with an
+additional instance variable bulletHole.
+
+Java
+After importing java.awt.right.foot.* and java.awt.gun.right.hand.*, and
+writing the classes and methods of those classes needed, you've forgotten
+what the hell you're doing.
+
+Ruby
+Your foot is ready to be shot in roughly five minutes, but you just can't
+find anywhere to shoot it.
+
+PHP
+You shoot yourself in the foot with a gun made with pieces from 300 other
+guns.
+
+ASP.NET
+Find a gun, it falls apart. Put it back together, it falls apart again. You
+try using the .GUN Framework, it falls apart. You stab yourself in the foot
+instead.
+
+SQL
+SELECT @ammo:=bullet FROM gun WHERE trigger = ‘PULLED’;
+INSERT INTO leg (foot) VALUES (@ammo);
+
+Perl
+You shoot yourself in the foot, but nobody can understand how you did it.
+Six months later, neither can you. (via Andy)
+
+-or-
+
+You stab yourself in the foot repeatedly with an incredibly large and
+very heavy Swiss Army knife.
+
+Javascript
+You’ve perfected a robust, rich user experience for shooting yourself in
+the foot. You then find that bullets are disabled on your gun.
+
+CSS
+You shoot your right foot with one hand, then switch hands to shoot your
+left foot but you realize that the gun has turned into a banana.
+
+Python
+You try to shoot yourself in the foot but you just keep hitting the
+whitespace between your toes.
+
+Algol
+You shoot yourself in the foot with a musket. The musket is aesthetically
+fascinating and the wound baffles the adolescent medic in the emergency
+room.
+
+BCPL
+You shoot yourself somewhere in the leg -- you can't get any finer
+resolution than that.
+
+Apple System 7
+Double click the gun icon and a window giving a selection for guns,
+target areas, plus balloon help with medical remedies, and assorted
+sound effects. Click "shoot" button and a small bomb appears with note
+"Error of Type 1 has occurred."
+
+Windows 3.1
+Double click the gun icon and wait. Eventually a window opens giving a
+selection for guns, target areas, plus balloon help with medical
+remedies, and assorted sound effects. Click "shoot" button and a small
+box appears with note
+"Unable to open Shoot.dll, check that path is correct."
+
+Occam
+You send a message to your finger, which sends a message to the trigger,
+which sends a message to the firing pin, which sends a message to the
+primer, which sends a message to the firing charge, which sends a message
+to the bullet, which sends a very unpleasant message to your foot.
 
 # patrick
 Servus
