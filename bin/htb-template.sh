@@ -118,7 +118,11 @@ EOF
 
 # Basic information about this script
 HTB_SCRIPT_NAME="$(basename $0)"
-HTB_SCRIPT_DIR="$(pwd)/$(dirname $0)"
+HTB_SCRIPT_DIR="$(dirname $0)"
+case "$HTB_SCRIPT_DIR" in
+  /*) ;;
+  *)  HTB_SCRIPT_DIR="$(pwd)/$HTB_SCRIPT_DIR" ;;
+esac
 HTB_USAGE_LINE="$HTB_SCRIPT_NAME [-h] [-m d|m|y|h|i|s] [-v <von>] [-b <bis>] [-d <fs>] [<file> ...]"
 
 # Catch signals: 2=SIGINT (CTRL+C), 15=SIGTERM (simple kill)

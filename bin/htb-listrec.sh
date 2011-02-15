@@ -117,7 +117,11 @@ EOF
 
 # Basic information about this script
 HTB_SCRIPT_NAME="$(basename $0)"
-HTB_SCRIPT_DIR="$(pwd)/$(dirname $0)"
+HTB_SCRIPT_DIR="$(dirname $0)"
+case "$HTB_SCRIPT_DIR" in
+  /*) ;;
+  *)  HTB_SCRIPT_DIR="$(pwd)/$HTB_SCRIPT_DIR" ;;
+esac
 HTB_USAGE_LINE="$HTB_SCRIPT_NAME [-h] [-d <fs>] [-l <line>] [file...]"
 
 # Catch signals: 2=SIGINT (CTRL+C), 15=SIGTERM (simple kill)
@@ -199,13 +203,10 @@ fi
 # +------------------------------------------------------------------------
 
 for FILE in $FILES; do
-  if test "$FILE" = "-"; then
-    unset FILE
-  fi
   if test -n "$PRINT_LEADIN_FILENAME"; then
     echo "Cutting $LINES from $FILE"
   fi
-  htb-lcut.sh -l $LINE $FILE | awk -F"$DELIMITER" '{nrOfFields = split($0, f, FS); for (i=1; i<=nrOfFields; i++) { printf("%3s  %s\n", i, f[i])}}'
+  cat "$FILE" | htb-lcut.sh -l $LINE | awk -F"$DELIMITER" '{nrOfFields = split($0, f, FS); for (i=1; i<=nrOfFields; i++) { printf("%3s  %s\n", i, f[i])}}'
   if test $? -ne 0; then
     HTB_CLEANUP_AND_EXIT 5 "Error while processing $FILE"
   fi
