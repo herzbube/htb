@@ -279,7 +279,7 @@ fi
 # Remaining variables and resources
 OPTSOK=hnp:
 PROBABILITY=0.25
-JOKE_FILE_PATH="$HTB_LIB_DIR/joke.of.the.day"
+JOKE_FILE_PATH="$HTB_SHARE_DIR/joke.of.the.day"
 AWK_FILE_PATH="$HTB_TMP_DIR/$HTB_SCRIPT_NAME.awk"
 TMP_FILE_PATH="$HTB_TMP_DIR/$HTB_SCRIPT_NAME.tmp"
 unset NEW
