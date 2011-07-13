@@ -36,6 +36,7 @@ else
   HTB_INCLUDE_DIR="$HTB_BASE_DIR/include"
   HTB_LIB_DIR="$HTB_BASE_DIR/lib"
   HTB_MAN_DIR="$HTB_BASE_DIR/man"
+  HTB_SHARE_DIR="$HTB_BASE_DIR/share"
   HTB_SRC_DIR="$HTB_BASE_DIR/src"
   HTB_LOG_DIR=/var/log
 
