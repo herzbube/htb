@@ -316,7 +316,7 @@ fi
 test ! -d $VARLIB_BACKUP_DIR && mkdir -p $VARLIB_BACKUP_DIR
 cd /
 # Stop daemons
-/etc/init.d/collectd stop
+/etc/init.d/collectd stop >/dev/null
 # Prepare a file that contains a list with files to archive.
 # Of course, it would be preferrable to use direct shell file
 # name patterns with tar, such as the following command line:
@@ -340,7 +340,7 @@ if test -s $TMP_FILE; then
 fi
 cd - >/dev/null
 # Restart daemons
-/etc/init.d/collectd start
+/etc/init.d/collectd start >/dev/null
 
 # ------------------------------------------------------------
 # Backup several directories/files in /var/www
