@@ -25,7 +25,7 @@ LOG_PATH="$LOG_DIR/$LOG_FILE"
 AWK_FILE="$TMP_DIR/$MYNAME.awk"
 HTML_FILE="wall-of-shame.shtml"
 MANUAL_HTML_FILE="manual-$HTML_FILE"
-HTML_PUBLISHED_DIR="/var/www/osgiliath.herzbube.ch"
+HTML_PUBLISHED_DIR="/var/www/pelargir.herzbube.ch"
 SYSTEM_NAME_TO_PRINT="$(hostname --fqdn)"
 GENERATED_DATE_TO_PRINT="$(date +'%d.%m.%Y-%H:%M:%S')"
 
@@ -171,7 +171,7 @@ END {
 # that contains the date when the event occurred
 function getTime(line)
 {
-  gsub(/ osgiliath.*\$/, "", line)
+  gsub(/ pelargir.*\$/, "", line)
   return line
 }
 
