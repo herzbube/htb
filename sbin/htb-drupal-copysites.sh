@@ -9,8 +9,8 @@
 # some input, e.g. database user passwords etc. Where possible
 # sensible defaults are provided.
 #
-# By default, the current Drupal location is expected to be
-# /var/www/drupal, and the new Drupal location is expected to be
+# By default, the old Drupal location is expected to be
+# /var/www/drupal-old, and the new Drupal location is expected to be
 # /var/www/drupal-new. Both locations are expected to be symlinks
 # to real directories that obey the name scheme "drupal-x.y".
 # All default values offered during the interactive part of this
@@ -327,7 +327,8 @@ get_site_info()
     return 1
   fi
 
-  # Auto-detect sites (use all directories except "all" and "default")
+  # Auto-detect sites (use all directories except "all", "default"
+  # and old-site sites)
   cd "$sites_dir"
   for site in *; do
     if test ! -d "$site"; then
@@ -336,6 +337,7 @@ get_site_info()
     case "$site" in
       all) continue ;;
       default) continue ;;
+      $old_site_prefix.*) continue ;;
       *) ;;
     esac
     if test -z "$default_site_list"; then
@@ -402,10 +404,11 @@ tmp_file="/tmp/$my_name.$$"
 base_dir="/var/www"
 default_settings_file="default.settings.php"
 site_settings_file="settings.php"
-default_current_inst_loc="$base_dir/drupal"
+default_current_inst_loc="$base_dir/drupal-old"
 default_new_inst_loc="$base_dir/drupal-new"
 default_admin_db_user_name=root
 default_drupal_db_user_name=drupal
+old_site_prefix=old-site
 
 # Gather information about current and new Drupal installation
 get_drupal_info "$default_current_inst_loc" "current"
@@ -460,17 +463,20 @@ printf "\n"
 for site_and_db in $site_and_db_list; do
   site_name="$(echo "$site_and_db" | awk -F";" '{print $1}')"
   db_name="$(echo "$site_and_db" | awk -F";" '{print $2}')"
+  old_site_name="$old_site_prefix.$site_name"
   echo "Processing site $site_name (database $db_name)..."
 
   current_site_loc="$current_drupal_inst_loc/sites/$site_name"
   new_site_loc="$new_drupal_inst_loc/sites/$site_name"
+  old_site_loc="$current_drupal_inst_loc/sites/$old_site_name"
   current_drupal_db_name="${current_drupal_db_prefix}${db_name}"
   new_drupal_db_name="${new_drupal_db_prefix}${db_name}"
   new_site_settings_file="$new_site_loc/$site_settings_file"
+  old_site_settings_file="$old_site_loc/$site_settings_file"
   dump_file="$new_site_loc/$current_drupal_db_name.mysqldump"
 
   # ----------
-  echo "  Copying site directory"
+  echo "  Copying site directory to new Drupal location"
   if test -d "$new_site_loc"; then
     get_answer "    Site directory already exists at new location $new_site_loc, overwrite?" "y"
     if test $? -ne 0 -o "$answer" != "y"; then
@@ -483,7 +489,7 @@ for site_and_db in $site_and_db_list; do
   cp -Rp "$current_site_loc" "$new_site_loc"
 
   # ----------
-  echo "  Setting up database connection"
+  echo "  Setting up database connection in new Drupal location"
   if test -f "$new_site_settings_file"; then
     echo "    Backing up old $site_settings_file"
     mv "$new_site_settings_file" "$new_site_settings_file.old"
@@ -492,7 +498,12 @@ for site_and_db in $site_and_db_list; do
   cp "$default_settings_file_in_new_drupal_loc" "$new_site_settings_file.org"
   echo "    Adding database connection settings"
   cat << EOF >"$tmp_file"
+BEGIN {
+  db_section_found = 0
+}
 {
+  # If this line is found we are processing a pristine default
+  # settings file with no databases configured
   if (\$0 ~ /^\\\$databases = array\\(\\);/)
   {
     print "\$databases['default']['default'] = array("
@@ -503,6 +514,14 @@ for site_and_db in $site_and_db_list; do
     print "  'host' => 'localhost',"
     print ");"
   }
+
+  # If one of the folowing lines are found, we are processing
+  # a settings file that already has a database configured
+  else if (\$0 ~ /^  'database' => '[^']',$/) { print "  'database' => '" new_drupal_db_name "'," }
+  else if (\$0 ~ /^  'username' => '[^']',$/) { print "  'username' => '" drupal_db_user_name "'," }
+  else if (\$0 ~ /^  'password' => '[^']',$/) { print "  'password' => '" drupal_db_user_passwd "'," }
+
+  # Line is not related to database settings
   else
   {
     print \$0
@@ -514,6 +533,20 @@ EOF
   echo "    Restricting file permissions"
   chown www-data "$new_site_settings_file"
   chmod 400 "$new_site_settings_file"
+
+  # ----------
+  echo "  Duplicating site in old Drupal location under the \"old-site\" subdomain"
+  if test -d "$old_site_loc"; then
+    echo "    old-site directory $old_site_loc already exists, overwriting"
+    rm -rf "$old_site_loc"
+  fi
+  cp -Rp "$current_site_loc" "$old_site_loc"
+  if test ! -f "$old_site_settings_file"; then
+    echo "    old-site has no $site_settings_file, please configure manually !!!"
+  else
+    mv "$old_site_settings_file" "$old_site_settings_file.old"
+    cat "$old_site_settings_file.old" | awk -f "$tmp_file" drupal_db_user_name="$drupal_db_user_name" drupal_db_user_passwd="$drupal_db_user_passwd" new_drupal_db_name="$new_drupal_db_name" >"$old_site_settings_file"
+  fi
 
   # ----------
   echo "  Granting privileges on $new_drupal_db_name"
