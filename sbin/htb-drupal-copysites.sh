@@ -16,23 +16,30 @@
 # All default values offered during the interactive part of this
 # script are derived from these directory names.
 #
-# In detail, this script performs the following steps:
+# In detail, this script performs the following steps (not
+# necessarily in the order listed here):
 # 1) Copy every site directory from the old Drupal directory to
 #    the new.
-# 2) Create a new settings.php for every site by copying the new
-#    Drupal version's default settings.php and modifying its
-#    database connection so that it is the same as in the old
-#    settings.php.
+# 2) Duplicate every site directory within the old Drupal
+#    directory; the duplicate site has an "old-site" prefix
+#    to distinguish it from the original site
 # 3) Create a database dump for every old Drupal site database
 #    (e.g. drupal68_herzbube). The files are gzipped and stored
-#    in the current directory
+#    in the new site directory
 # 4) Grant privileges to the Drupal database user for every new
 #    Drupal site database (e.g. drupal614_herzbube).
 # 5) Create the new Drupal site database and copy its content
 #    from the database dump made in step 3
-# 6) Leave a backup of the original settings.php file and a
-#    compressed version of the database dump in the new site
-#    directory
+# 6) Create a new settings.php for every site in the new Drupal
+#    directory by copying the new Drupal version's default
+#    settings.php and modifying its database connection so that
+#    it points to the new Drupal site database
+# 7) Modify the existing settings.php for every old-site in the
+#    old Drupal directory so that its database connection
+#    points to the new Drupal site database
+# 8) Leave a backup of the original settings.php file and a
+#    compressed version of the database dump in the new Drupal
+#    site directories
 
 
 # ------------------------------------------------------------
