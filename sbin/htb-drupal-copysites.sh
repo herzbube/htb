@@ -492,26 +492,25 @@ for site_and_db in $site_and_db_list; do
   cp "$default_settings_file_in_new_drupal_loc" "$new_site_settings_file.org"
   echo "    Adding database connection settings"
   cat << EOF >"$tmp_file"
-BEGIN {
-  db_section_found = 0
-}
 {
-  if (db_section_found == 1)
+  if (\$0 ~ /^\\\$databases = array\\(\\);/)
   {
-    if      (\$0 ~ /'database' =>/) { print "  'database' => '" new_drupal_db_name "'," }
-    else if (\$0 ~ /'username' =>/) { print "  'username' => '" drupal_db_user_name "'," }
-    else if (\$0 ~ /'password' =>/) { print "  'password' => '" drupal_db_user_passwd "'," }
-    else if (\$0 ~ /^\\);\$/)       { db_section_found = 0; print \$0 }
-    else                            { print \$0 }
+    print "\$databases['default']['default'] = array("
+    print "  'driver' => 'mysql',"
+    print "  'database' => '" new_drupal_db_name "',"
+    print "  'username' => '" drupal_db_user_name "',"
+    print "  'password' => '" drupal_db_user_passwd "',"
+    print "  'host' => 'localhost',"
+    print ");"
   }
   else
   {
-    if (\$0 ~ /^\\\$databases\\['default']\\['default'] = array\\(\$/) { db_section_found = 1 }
     print \$0
   }
 }
 EOF
   cat "$new_site_settings_file.org" | awk -f "$tmp_file" drupal_db_user_name="$drupal_db_user_name" drupal_db_user_passwd="$drupal_db_user_passwd" new_drupal_db_name="$new_drupal_db_name" >"$new_site_settings_file"
+  rm -f "$tmp_file"
   echo "    Restricting file permissions"
   chown www-data "$new_site_settings_file"
   chmod 400 "$new_site_settings_file"
