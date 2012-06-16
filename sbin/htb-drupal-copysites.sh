@@ -327,8 +327,7 @@ get_site_info()
     return 1
   fi
 
-  # Auto-detect sites (use all directories except "all", "default"
-  # and upgrade sites)
+  # Auto-detect sites (use all directories except "all" and "default")
   cd "$sites_dir"
   for site in *; do
     if test ! -d "$site"; then
@@ -337,7 +336,6 @@ get_site_info()
     case "$site" in
       all) continue ;;
       default) continue ;;
-      $upgrade_site_prefix.*) continue;;
       *) ;;
     esac
     if test -z "$default_site_list"; then
@@ -408,7 +406,6 @@ default_current_inst_loc="$base_dir/drupal"
 default_new_inst_loc="$base_dir/drupal-new"
 default_admin_db_user_name=root
 default_drupal_db_user_name=drupal
-upgrade_site_prefix=site-upgrade
 
 # Gather information about current and new Drupal installation
 get_drupal_info "$default_current_inst_loc" "current"
@@ -463,16 +460,13 @@ printf "\n"
 for site_and_db in $site_and_db_list; do
   site_name="$(echo "$site_and_db" | awk -F";" '{print $1}')"
   db_name="$(echo "$site_and_db" | awk -F";" '{print $2}')"
-  upgrade_site_name="$upgrade_site_prefix.$site_name"
   echo "Processing site $site_name (database $db_name)..."
 
   current_site_loc="$current_drupal_inst_loc/sites/$site_name"
   new_site_loc="$new_drupal_inst_loc/sites/$site_name"
-  upgrade_site_loc="$current_drupal_inst_loc/sites/$upgrade_site_name"
   current_drupal_db_name="${current_drupal_db_prefix}${db_name}"
   new_drupal_db_name="${new_drupal_db_prefix}${db_name}"
   new_site_settings_file="$new_site_loc/$site_settings_file"
-  upgrade_site_settings_file="$upgrade_site_loc/$site_settings_file"
   dump_file="$new_site_loc/$current_drupal_db_name.mysqldump"
 
   # ----------
@@ -496,6 +490,7 @@ for site_and_db in $site_and_db_list; do
   fi
   echo "    Copying new default $site_settings_file"
   cp "$default_settings_file_in_new_drupal_loc" "$new_site_settings_file.org"
+  echo "    Adding database connection settings"
   cat << EOF >"$tmp_file"
 BEGIN {
   db_section_found = 0
@@ -517,23 +512,9 @@ BEGIN {
 }
 EOF
   cat "$new_site_settings_file.org" | awk -f "$tmp_file" drupal_db_user_name="$drupal_db_user_name" drupal_db_user_passwd="$drupal_db_user_passwd" new_drupal_db_name="$new_drupal_db_name" >"$new_site_settings_file"
-  echo "    Restricting permissions"
+  echo "    Restricting file permissions"
   chown www-data "$new_site_settings_file"
   chmod 400 "$new_site_settings_file"
-
-  # ----------
-  echo "  Creating temporary upgrade site"
-  if test -d "$upgrade_site_loc"; then
-    echo "    Upgrade site directory $upgrade_site_loc already exists, overwriting"
-    rm -rf "$upgrade_site_loc"
-  fi
-  cp -Rp "$current_site_loc" "$upgrade_site_loc"
-  if test ! -f "$upgrade_site_settings_file"; then
-    echo "    Upgrade site has no $site_settings_file, please configure manually !!!"
-  else
-    mv "$upgrade_site_settings_file" "$upgrade_site_settings_file.old"
-    cat "$upgrade_site_settings_file.old" | awk -f "$tmp_file" drupal_db_user_name="$drupal_db_user_name" drupal_db_user_passwd="$drupal_db_user_passwd" new_drupal_db_name="$new_drupal_db_name" >"$upgrade_site_settings_file"
-  fi
 
   # ----------
   echo "  Granting privileges on $new_drupal_db_name"
