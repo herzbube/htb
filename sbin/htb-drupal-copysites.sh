@@ -9,17 +9,20 @@
 # some input, e.g. database user passwords etc. Where possible
 # sensible defaults are provided.
 #
-# By default, the current Drupal location is expected to reside
-# in /var/www/drupal, and the new Drupal location is expected to
-# reside in /var/www/drupal-new. Both locations are expected to be
-# symlinks to real directories that obey the name scheme "drupal-x.y".
+# By default, the current Drupal location is expected to be
+# /var/www/drupal, and the new Drupal location is expected to be
+# /var/www/drupal-new. Both locations are expected to be symlinks
+# to real directories that obey the name scheme "drupal-x.y".
 # All default values offered during the interactive part of this
 # script are derived from these directory names.
 #
 # In detail, this script performs the following steps:
 # 1) Copy every site directory from the old Drupal directory to
 #    the new.
-# 2) Update settings.php for every site
+# 2) Create a new settings.php for every site by copying the new
+#    Drupal version's default settings.php and modifying its
+#    database connection so that it is the same as in the old
+#    settings.php.
 # 3) Create a database dump for every old Drupal site database
 #    (e.g. drupal68_herzbube). The files are gzipped and stored
 #    in the current directory
@@ -448,6 +451,13 @@ if test $? -ne 0; then
   exit 1
 fi
 
+# Perform final checks
+default_settings_file_in_new_drupal_loc="$new_drupal_inst_loc/sites/default/$default_settings_file"
+if test ! -f "$default_settings_file_in_new_drupal_loc"; then
+  echo "Default settings file does not exist in new Drupal location: "
+  exit 1
+fi
+
 # Iterate sites
 printf "\n"
 for site_and_db in $site_and_db_list; do
@@ -485,15 +495,23 @@ for site_and_db in $site_and_db_list; do
     mv "$new_site_settings_file" "$new_site_settings_file.old"
   fi
   echo "    Copying new default $site_settings_file"
-  cp "$new_drupal_inst_loc/sites/default/$default_settings_file" "$new_site_settings_file.org"
+  cp "$default_settings_file_in_new_drupal_loc" "$new_site_settings_file.org"
   cat << EOF >"$tmp_file"
+BEGIN {
+  db_section_found = 0
+}
 {
-  if (\$0 ~ /^\\\$db_url = /)
+  if (db_section_found == 1)
   {
-    print "\$db_url = 'mysqli://" drupal_db_user_name ":" drupal_db_user_passwd "@localhost/" new_drupal_db_name "';"
+    if      (\$0 ~ /'database' =>/) { print "  'database' => '" new_drupal_db_name "'," }
+    else if (\$0 ~ /'username' =>/) { print "  'username' => '" drupal_db_user_name "'," }
+    else if (\$0 ~ /'password' =>/) { print "  'password' => '" drupal_db_user_passwd "'," }
+    else if (\$0 ~ /^\\);\$/)       { db_section_found = 0; print \$0 }
+    else                            { print \$0 }
   }
   else
   {
+    if (\$0 ~ /^\\\$databases\\['default']\\['default'] = array\\(\$/) { db_section_found = 1 }
     print \$0
   }
 }
