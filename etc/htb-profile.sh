@@ -27,6 +27,16 @@ if test -r "$FINK_INIT_SCRIPT"; then
   . "$FINK_INIT_SCRIPT"
 fi
 
+# Set up MacPorts environment
+MACPORTS_BASE_DIR="/opt/local"
+if test -f "$MACPORTS_BASE_DIR/bin/port"; then
+  for MACPORTS_DIR in $MACPORTS_BASE_DIR/bin $MACPORTS_BASE_DIR/sbin; do
+    if test -z "$(echo $PATH | fgrep "$MACPORTS_DIR")"; then
+      PATH="$MACPORTS_DIR:$PATH"
+    fi
+  done
+fi
+
 # Set up HTB environment
 # Note: The order in which the following things are run is important
 if test -z "$HTB_BASE_DIR"; then
