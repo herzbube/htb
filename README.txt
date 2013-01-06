@@ -44,6 +44,20 @@ All HTB scripts rely on a few things that are set up in the so-called
 - If HTB_BASE_DIR is not set, the HTB script looks for htb-setenv.sh in the
   folder "etc" that lies in parallel to its own location
 
+----------------------------------------------------------------------
+Shell environment integration
+----------------------------------------------------------------------
+Assuming that the HTB files are installed in /usr/local, add the following line to your
+~/.profile (or the system-wide /etc/profile) to integrate he HTB into your login shell:
+  . /usr/local/etc/htb-profile.sh
+
+Add the following line to your ~/.bashrc to propagate the integration to subshells:
+  . /usr/local/etc/htb-bashrc.sh
+
+Notes
+- If the .bashrc modification is not made, then aliases and functions are not available
+  in subshells
+- htb-profile.sh automatically invokes htb-bashrc.sh
 
 ----------------------------------------------------------------------
 Dependencies
