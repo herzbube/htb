@@ -1,13 +1,17 @@
 ----------------------------------------------------------------------
 HTB - herzbube's toolbox
 ----------------------------------------------------------------------
-The HTB is a collection of useful programs, usually shell scripts, that I
-(herzbube) created for making my work-related tasks a little bit more
-comfortable. Some programs were also created to improve system administration
-of my private Linus server.
+The HTB is a collection of useful programs, usually bash shell scripts, that I
+(herzbube) originally created in the 1990'ies for making my work-related tasks
+as an SCO Unix sysadmin a little bit more comfortable. Since then I have
+adapted the collection to run on Debian Linux and Mac OS X, and I have added
+a few more scripts that help me with administrating my private Linux server.
 
-HTB tries to be system independent, but this probably is an illusion.
+The HTB tries to be system independent (i.e. it should work likewise on Linux
+or Mac OS X or any other Unix-like system), but this is probably an illusion.
 
+I have my doubts whether the HTB is useful to anyone but myself, but here it
+is anyway.
 
 ----------------------------------------------------------------------
 How does it work?
@@ -26,43 +30,61 @@ install-base
   share
   src
 
-A common install base directory for the HTB is /usr/local.
+A common install base directory for the HTB is /usr/local, but it is also
+possible to install the HTB in its own base directory that is completely
+separate from the rest of the system. This is the way to go if you want to
+simply clone the HTB Git repository, and in fact that's exactly how I prefer
+to setup the HTB myself:
 
-To make the HTB accessible on the command line, the following folders must be
-in the PATH:
-- $HTB_BASE_DIR/bin
-- $HTB_BASE_DIR/sbin (if the user is root)
+  cd /usr/local
+  git clone https://git.herzbube.ch/git/htb.git
 
-All HTB scripts rely on a few things that are set up in the so-called
-"HTB environment":
-- A HTB script assumes that the environment is properly set up if the
-  environment variable HTB_ENVIRONMENT_INCLUDED is set
-- If not, a HTB script tries to set up the HTB environment by invoking
-  htb-setenv.sh (hardcoded name)
-- If the environment variable HTB_BASE_DIR is set, htb-setenv.sh must be
-  located in a directory "etc" below the folder referred to by this variable
-- If HTB_BASE_DIR is not set, the HTB script looks for htb-setenv.sh in the
-  folder "etc" that lies in parallel to its own location
+Once the HTB is installed on a system, its scripts immediately can be run from
+cron jobs, or invoked from other scripts - as long as a caller specifies the
+full path to the HTB script it wants to run, there is literally zero
+configuration necessary. But usually what people (including me) want is to be
+able to run HTB scripts from interactive shells, without having to specify
+a full path every time a script is run. Read the next section
+"Shell environment integration" for details how to achieve this.
 
 ----------------------------------------------------------------------
 Shell environment integration
 ----------------------------------------------------------------------
-Assuming that the HTB files are installed in /usr/local, add the following line to your
-~/.profile (or the system-wide /etc/profile) to integrate he HTB into your login shell:
-  . /usr/local/etc/htb-profile.sh
+The minimum work that you need to do to integrate the HTB into your shell
+environment is to add the following folders to the PATH environment variable
+(replace HTB_BASE_DIR with the actual install base directory):
+- HTB_BASE_DIR/bin
+- HTB_BASE_DIR/sbin (if the user is root)
 
-Add the following line to your ~/.bashrc to propagate the integration to subshells:
-  . /usr/local/etc/htb-bashrc.sh
+This lets you run HTB scripts without having to specify a full path every time.
+But the HTB also provides shell aliases and shell functions that you might find
+useful. If you are interested in these, you should do the following two things:
+
+1) Add the following line to your ~/.profile (or the system-wide /etc/profile)
+to integrate HTB aliases and functions into your login shell:
+
+  HTB_BASE_DIR=/path/to/htb-base-dir
+  . $HTB_BASE_DIR/etc/htb-profile.sh
+
+2) Add the following line to your ~/.bashrc (or the system-wide
+/etc/bash.bashrc) to propagate the integration to subshells:
+
+  HTB_BASE_DIR=/path/to/htb-base-dir
+  . $HTB_BASE_DIR/etc/htb-bashrc.sh
 
 Notes
-- If the .bashrc modification is not made, then aliases and functions are not available
-  in subshells
-- htb-profile.sh automatically invokes htb-bashrc.sh
+- Set HTB_BASE_DIR with the actual install base directory
+- You don't have to modify the PATH environment variable yourself anymore,
+  htb-profile.sh already does this for you
+- htb-profile.sh automatically invokes htb-bashrc.sh to make aliases and
+  functions available in the login shell
+- If you don't make the .bashrc modification, then aliases and functions are not
+  available in subshells
 
 ----------------------------------------------------------------------
 Dependencies
 ----------------------------------------------------------------------
-HTB requires the following utilities (not an exclusive list):
+HTB requires the following utilities (not a complete list):
 - /usr/bin/env; all the other stuff is expected to be in the PATH
 - bash
 - cp, rm, ln, ls
@@ -76,6 +98,29 @@ HTB requires the following utilities (not an exclusive list):
 - id
 - less
 
+----------------------------------------------------------------------
+The HTB environment
+----------------------------------------------------------------------
+The HTB is fully self-contained, which means that you can move around the
+install base directory at will. As mentioned further up, it is also possible
+to just run HTB scripts without any system configuration as long as you
+specify the full path to the script.
+
+To make this work, all HTB scripts rely on a few things that are set up in
+the so-called "HTB environment".
+- An HTB script assumes that the environment is properly set up if the
+  environment variable HTB_ENVIRONMENT_INCLUDED is set. Usually this is the
+  case only if the script was called by another HTB script that has already
+  set up the environment.
+- If an HTB script finds that HTB_ENVIRONMENT_INCLUDED is not set, it tries
+  to set up the HTB environment itself, by invoking (= sourcing) the script
+  fragment htb-setenv.sh (a hardcoded name).
+- But where to find htb-setenv.sh? If the environment variable HTB_BASE_DIR
+  is set, htb-setenv.sh must be located in a directory "etc" below the folder
+  referred to by this variable
+- If HTB_BASE_DIR is not set, the HTB script looks for htb-setenv.sh in the
+  folder "etc" that lies in parallel to its own location
+- If htb-setenv.sh cannot be found, the script will abort with exit code 3.
 
 ----------------------------------------------------------------------
 Coding guidelines
