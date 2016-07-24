@@ -28,6 +28,19 @@ alias df="df -h"
 alias l="ls -la"
 alias _fl="fink list --width=200"
 
+case $(uname) in
+  Linux)
+    which dircolors >/dev/null
+    if test $? -eq 0; then
+      test -r ~/.dircolors && eval "$(dircolors -b ~/.dircolors)" || eval "$(dircolors -b)"
+      alias ls='ls --color=auto'
+    fi
+    ;;
+  Darwin)
+    alias ls='ls -G'
+    ;;
+esac
+
 # /////////////////////////////////////////////////////////////////////////
 # // Variables
 # /////////////////////////////////////////////////////////////////////////
