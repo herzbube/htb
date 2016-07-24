@@ -32,12 +32,7 @@ alias _fl="fink list --width=200"
 # // Variables
 # /////////////////////////////////////////////////////////////////////////
 
-# Command line prompt (yes, this must be defined separately for each sub-shell!)
-PS1="\h:\w --> "
-if test "$(id -u)" = "0"; then
-  PS1="ROOT $PS1"
-fi
-export PS1
+:  # no-op, currently no variables
 
 # /////////////////////////////////////////////////////////////////////////
 # // Functions
