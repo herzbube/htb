@@ -149,9 +149,6 @@ TRAINED_AS_SPAM_DIR=".Junk.Incoming"
 
 # Programs
 SA_LEARN_BIN=/usr/bin/sa-learn
-SPAMC_BIN=/usr/bin/spamc
-RM_BIN=/bin/rm
-MV_BIN=/bin/mv
 
 # Other variables
 LOCK_FILE="$HOME/$(basename $0).$LOGNAME.pid"
@@ -191,7 +188,7 @@ if test -f "$LOCK_FILE"; then
 fi
 
 # Sanity checks
-for BIN in "$SA_LEARN_BIN" "$SPAMC_BIN" "$RM_BIN" "$MV_BIN"
+for BIN in "$SA_LEARN_BIN"
 do
   which "$BIN" >/dev/null 2>&1
   if test $? -ne 0; then
@@ -217,7 +214,7 @@ do
   do
     TRAINING_DIR="$TRAINING_BASE_DIR/$SUB_DIR"
     if test ! -d "$TRAINING_DIR"; then
-      echo "Source directory not found: $TRAINING_DIR"
+      echo "Training directory not found: $TRAINING_DIR"
       continue
     fi
 
