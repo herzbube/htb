@@ -5,11 +5,14 @@
 # | Date:           25 Sep 2016
 # | Description:    Makes a recursive copy of a source folder for backup
 # |                 purposes. The source folder can be located on a local
-# |                 filesystem or on a remote machine. The destination
-# |                 folder is always located on a local filesystem. If the
-# |                 destination folder already exists, its content is
-# |                 synchronized completely with the source folder. Because
-# |                 the copy/sync is made using rsync, the amount of data
+# |                 filesystem or on a remote machine reachable via SSH.
+# |                 The destination folder can be located either on a local
+# |                 filesystem, on a Samba filesystem, or on a Mac OS X
+# |                 disk image filesystem. The disk image can optionally
+# |                 be located on a Samba filesystem. If the destination
+# |                 folder already exists, its content is synchronized
+# |                 completely with the source folder. Because the
+# |                 copy/sync is made using rsync, the amount of data
 # |                 transferred between source and destination is minimal.
 # |                 By using exclude/include patterns it is possible to
 # |                 restrict the copy/sync operation to certain files and
@@ -28,10 +31,23 @@
 # |                   This parameter can be specified multiple times. The
 # |                   order in which include/exclude patterns are specified
 # |                   is important.
+# |                 [-s <samba-spec>]: Specification of a Samba share to
+# |                   mount. The specification conforms to the usual syntax
+# |                   used by "mount -t smbfs" (see man "mount_smbfs").
+# |                 [-d <disk-image-path>]: The path to a disk image to
+# |                   mount. If -s is also specified, the path specified
+# |                   here must exist on the Samba share after it is
+# |                   mounted. The disk image can be anything that can be
+# |                   processed by hdiutil.
 # |                 [[user@]host:]source: Specification of source folder.
 # |                   Specification of remote source folder conforms to
 # |                   the usual rsync / SSH syntax.
-# |                 destination: Specification of destination folder.
+# |                 destination: Specification of destination folder. If
+# |                   -s is specified, the path specified here must exist
+# |                   on the Samba share after it is mounted. If -d is
+# |                   specified (regardless of whether -s is also specified),
+# |                   the path specified here must exist on the disk image
+# |                   after it is mounted.
 # |
 # | Exit codes:     0: No error
 # |                 2: Aborted by signal (e.g. Ctrl+C)
@@ -80,6 +96,44 @@ HTB_CLEANUP_AND_EXIT()
     fi
   fi
 
+  if test -n "$RSYNC_PATTERNS_WERE_SPECIFIED"; then
+    rm -f "$RSYNC_PATTERNSFILE_PATH"
+  fi
+
+  # Unmount disk image first because if the Samba share was
+  # also specified, the disk image resides on the Samba share
+  if test -n "$DISKIMAGE_WAS_SPECIFIED"; then
+    if test -n "$DISKIMAGE_WAS_MOUNTED"; then
+      hdiutil detach "$DISKIMAGE_MOUNTPOINT"
+      if test $? -ne 0; then
+        echo "$HTB_SCRIPT_NAME: Failed to unmount disk image" >&2
+      fi
+    fi
+
+    if test -n "$DISKIMAGE_MOUNTPOINT_WAS_CREATED"; then
+      rmdir "$DISKIMAGE_MOUNTPOINT"
+      if test $? -ne 0; then
+        echo "$HTB_SCRIPT_NAME: Failed to remove disk image mount point" >&2
+      fi
+    fi
+  fi
+
+  if test -n "$SMBSHARE_WAS_SPECIFIED"; then
+    if test -n "$SMBSHARE_WAS_MOUNTED"; then
+      umount "$SMB_MOUNTPOINT"
+      if test $? -ne 0; then
+        echo "$HTB_SCRIPT_NAME: Failed to unmount Samba share" >&2
+      fi
+    fi
+
+    if test -n "$SMBSHARE_MOUNTPOINT_WAS_CREATED"; then
+      rmdir "$SMB_MOUNTPOINT"
+      if test $? -ne 0; then
+        echo "$HTB_SCRIPT_NAME: Failed to remove Samba share mount point" >&2
+      fi
+    fi
+  fi
+
   exit $EXIT_STATUS
 }
 
@@ -116,10 +170,23 @@ $HTB_USAGE_LINE
    This parameter can be specified multiple times. The
    order in which include/exclude patterns are specified
    is important.
+ [-s <samba-spec>]: Specification of a Samba share to
+   mount. The specification conforms to the usual syntax
+   used by "mount -t smbfs" (see man "mount_smbfs").
+ [-d <disk-image-path>]: The path to a disk image to
+   mount. If -s is also specified, the path specified
+   here must exist on the Samba share after it is
+   mounted. The disk image can be anything that can be
+   processed by hdiutil.
  [[user@]host:]source: Specification of source folder.
    Specification of remote source folder conforms to
    the usual rsync / SSH syntax.
- destination: Specification of destination folder.
+ destination: Specification of destination folder. If
+  -s is specified, the path specified here must exist
+  on the Samba share after it is mounted. If -d is
+  specified (regardless of whether -s is also specified),
+  the path specified here must exist on the disk image
+  after it is mounted.
 
 Exit codes:
  0: No error
@@ -145,7 +212,7 @@ case "$HTB_SCRIPT_DIR" in
   /*) ;;
   *)  HTB_SCRIPT_DIR="$(pwd)/$HTB_SCRIPT_DIR" ;;
 esac
-HTB_USAGE_LINE="$HTB_SCRIPT_NAME [-h] [-i <pattern>] [-e <pattern>] [[user@]host:]source destination"
+HTB_USAGE_LINE="$HTB_SCRIPT_NAME [-h] [-i <pattern>] [-e <pattern>] [-s <samba-spec>] [-d <disk-image-path>] [[user@]host:]source destination"
 
 # Catch signals: 2=SIGINT (CTRL+C), 15=SIGTERM (simple kill)
 trap "HTB_CLEANUP_AND_EXIT 2" 2 15
@@ -163,10 +230,28 @@ if test -z "$HTB_ENVIRONMENT_INCLUDED"; then
 fi
 
 # Remaining variables and resources
-OPTSOK=hi:e:
+OPTSOK=hi:e:s:d:
+SMB_MOUNTPOINT="/tmp/mount-smbshare-$HTB_SCRIPT_NAME"
+DISKIMAGE_MOUNTPOINT="/tmp/mount-diskimage-$HTB_SCRIPT_NAME"
+RSYNC_PATTERNSFILE_PATH="/tmp/rsync-patterns-$HTB_SCRIPT_NAME"
 DATE_FORMAT="+%Y-%m-%d %H:%M:%S"
 SEPARATOR_LINE="--------------------------------------------------------------------------------"
-unset PATTERNS
+unset RSYNC_PATTERNS_WERE_SPECIFIED
+unset SMBSHARE_WAS_SPECIFIED SMBSHARE_MOUNTPOINT_WAS_CREATED SMBSHARE_WAS_MOUNTED
+unset DISKIMAGE_WAS_SPECIFIED DISKIMAGE_MOUNTPOINT_WAS_CREATED DISKIMAGE_WAS_MOUNTED
+
+# Make sure that the patterns file does not exist so that the argument
+# processing code below can safely use >> to output patterns into the file
+rm -f "$RSYNC_PATTERNSFILE_PATH"
+if test $? -ne 0; then
+  HTB_CLEANUP_AND_EXIT 4 "Error deleting rsync patterns file: $RSYNC_PATTERNSFILE_PATH"
+fi
+
+if test -z "$HOSTNAME"; then
+  HOSTNAME="$(uname -n)"
+fi
+KEYCHAIN_SCRIPT="$HOME/.keychain/$HOSTNAME-sh"
+
 
 # +------------------------------------------------------------------------
 # | Argument processing
@@ -180,10 +265,20 @@ do
       HTB_CLEANUP_AND_EXIT 0
       ;;
     i)
-      PATTERNS="$PATTERNS --include=$OPTARG"
+      echo "+ $OPTARG" >>"$RSYNC_PATTERNSFILE_PATH"
+      RSYNC_PATTERNS_WERE_SPECIFIED=1
       ;;
     e)
-      PATTERNS="$PATTERNS --exclude=$OPTARG"
+      echo "- $OPTARG" >>"$RSYNC_PATTERNSFILE_PATH"
+      RSYNC_PATTERNS_WERE_SPECIFIED=1
+      ;;
+    s)
+      SMBSHARE_SPEC="$OPTARG"
+      SMBSHARE_WAS_SPECIFIED=1
+      ;;
+    d)
+      DISKIMAGE_PATH="$OPTARG"
+      DISKIMAGE_WAS_SPECIFIED=1
       ;;
     \?)
       HTB_CLEANUP_AND_EXIT 4 "$HTB_USAGE_LINE"
@@ -191,14 +286,40 @@ do
   esac
 done
 shift $(expr $OPTIND - 1)
-FILES="$*"
 
 if test $# -ne 2; then
   HTB_CLEANUP_AND_EXIT 4 "$HTB_USAGE_LINE"
 fi
 
-SOURCE="$1"
-DESTINATION="$2"
+SOURCE_FULL_PATH="$1"
+
+if test -n "$DISKIMAGE_WAS_SPECIFIED"; then
+  DESTINATION_FULL_PATH="$DISKIMAGE_MOUNTPOINT/$2"
+elif test -n "$SMBSHARE_WAS_SPECIFIED"; then
+  DESTINATION_FULL_PATH="$SMB_MOUNTPOINT/$2"
+else
+  DESTINATION_FULL_PATH="$2"
+fi
+
+if test -n "$SMBSHARE_WAS_SPECIFIED"; then
+  if test -d "$SMB_MOUNTPOINT"; then
+    HTB_CLEANUP_AND_EXIT 4 "Samba share mount point already exists: $SMB_MOUNTPOINT"
+  fi
+fi
+
+if test -n "$DISKIMAGE_WAS_SPECIFIED"; then
+  if test -d "$DISKIMAGE_MOUNTPOINT"; then
+    HTB_CLEANUP_AND_EXIT 4 "Disk image mount point already exists: $DISKIMAGE_MOUNTPOINT"
+  fi
+fi
+
+if test -n "$DISKIMAGE_WAS_SPECIFIED"; then
+  if test -n "$SMBSHARE_WAS_SPECIFIED"; then
+    DISKIMAGE_FULL_PATH="$SMB_MOUNTPOINT/$DISKIMAGE_PATH"
+  else
+    DISKIMAGE_FULL_PATH="$DISKIMAGE_PATH"
+  fi
+fi
 
 # +------------------------------------------------------------------------
 # | Main program processing
@@ -211,32 +332,88 @@ echo "$SEPARATOR_LINE"
 echo "$BEGIN_LINE"
 echo "$SEPARATOR_LINE"
 
-# Run keychain script file - with this we setup access to ssh-agent
-# so that rsync can perform a passwordless login
-[ -z "$HOSTNAME" ] && HOSTNAME=`uname -n`
-KEYCHAIN_SCRIPT="$HOME/.keychain/$HOSTNAME-sh"
-if test ! -f "$KEYCHAIN_SCRIPT"; then
-  HTB_CLEANUP_AND_EXIT 5 "keychain script file does not exist: $KEYCHAIN_SCRIPT"
-fi
-echo "Executing keychain script file ..."
-. "$KEYCHAIN_SCRIPT"
-if test $? -ne 0; then
-  HTB_CLEANUP_AND_EXIT 5 "Error executing keychain script file: $KEYCHAIN_SCRIPT"
+# Run keychain script file if it exists. With this we setup access to
+# ssh-agent so that rsync can perform a passwordless login.
+if test -f "$KEYCHAIN_SCRIPT"; then
+  echo "Executing keychain script file ..."
+  . "$KEYCHAIN_SCRIPT"
+  if test $? -ne 0; then
+    HTB_CLEANUP_AND_EXIT 5 "Error executing keychain script file: $KEYCHAIN_SCRIPT"
+  fi
+else
+  echo "No keychain script file executed"
 fi
 
-# Create local backups folder if it does not exist
-if test ! -d "$DESTINATION"; then
-  echo "Creating local destination folder $DESTINATION ..."
-  mkdir -p "$DESTINATION"
+# Mount Samba share if it was specified
+if test -n "$SMBSHARE_WAS_SPECIFIED"; then
+  echo "Creating Samba share mount point $SMB_MOUNTPOINT ..."
+  mkdir -p "$SMB_MOUNTPOINT"
   if test $? -ne 0; then
-    HTB_CLEANUP_AND_EXIT 5 "Failed to create local destination folder"
+    HTB_CLEANUP_AND_EXIT 5 "Error creating Samba share mount point"
+  fi
+  SMBSHARE_MOUNTPOINT_WAS_CREATED=1
+
+  # Don't print Samba share spec, it may contain a password
+  echo "Mounting Samba share ..."
+  mount -t smbfs "$SMBSHARE_SPEC" "$SMB_MOUNTPOINT"
+  if test $? -ne 0; then
+    HTB_CLEANUP_AND_EXIT 5 "Error mounting Samba share"
+  else
+    SMBSHARE_WAS_MOUNTED=1
   fi
 fi
 
-# Run the sync
+# Mount disk image if it was specified
+if test -n "$DISKIMAGE_WAS_SPECIFIED"; then
+  # Can check this only after Samba share was mounted because disk image resides
+  # on Samba share
+  if test ! -d "$DISKIMAGE_FULL_PATH"; then
+    HTB_CLEANUP_AND_EXIT 5 "Disk image does not exist: $DISKIMAGE_FULL_PATH"
+  fi
+
+  echo "Creating disk image mount point $DISKIMAGE_MOUNTPOINT ..."
+  mkdir -p "$DISKIMAGE_MOUNTPOINT"
+  if test $? -ne 0; then
+    HTB_CLEANUP_AND_EXIT 5 "Error creating disk image mount point"
+  fi
+  DISKIMAGE_MOUNTPOINT_WAS_CREATED=1
+
+  echo "Mounting disk image $DISKIMAGE_FULL_PATH ..."
+  hdiutil attach -mountpoint "$DISKIMAGE_MOUNTPOINT" "$DISKIMAGE_FULL_PATH"
+  if test $? -ne 0; then
+    HTB_CLEANUP_AND_EXIT 5 "Error mounting disk image"
+  else
+    DISKIMAGE_WAS_MOUNTED=1
+  fi
+fi
+
+# Create destination folder if it does not exist
+if test ! -d "$DESTINATION_FULL_PATH"; then
+  echo "Creating destination folder $DESTINATION_FULL_PATH ..."
+  mkdir -p "$DESTINATION_FULL_PATH"
+  if test $? -ne 0; then
+    HTB_CLEANUP_AND_EXIT 5 "Error creating destination folder"
+  fi
+fi
+
+# Perform sync. Notes:
+# - The --archive option implies --recursive
+# - The --xattrs option is especially important for Mac OS X (the resource
+#   fork is stored as an extended attribute, the Finder also stores data
+#   in an extended attribute, etc.)
+# - We obtain include/exclude patterns from a file, not from command line
+#   options (e.g. --exclude=foo) because patterns might contain spaces,
+#   and that would require us to perform complicated eval logic for proper
+#   double quote handling. We use --exclude-from to specify the patterns
+#   file even though it may contain include patterns - rsync can handle
+#   that.
 echo "Copying data ..."
-# --archive implies --recursive
-rsync --archive --compress --delete-excluded --verbose $PATTERNS "$SOURCE" "$DESTINATION"
+if test -n "$RSYNC_PATTERNS_WERE_SPECIFIED"; then
+  rsync --archive --compress --delete --delete-excluded --xattrs --verbose --exclude-from="$RSYNC_PATTERNSFILE_PATH" "$SOURCE_FULL_PATH" "$DESTINATION_FULL_PATH"
+else
+  rsync --archive --compress --delete --delete-excluded --xattrs --verbose "$SOURCE_FULL_PATH" "$DESTINATION_FULL_PATH"
+fi
+
 if test $? -ne 0; then
   HTB_CLEANUP_AND_EXIT 5 "Error while copying data"
 fi
@@ -248,5 +425,5 @@ echo "$SEPARATOR_LINE"
 echo "$END_LINE"
 echo "$SEPARATOR_LINE"
 
-
+# Unmount everything and remove mount points
 HTB_CLEANUP_AND_EXIT 0
