@@ -17,7 +17,7 @@
 # |
 # | Arguments:      None
 # | Exit codes:     None
-# | Dependencies:   bash (export -f)
+# | Dependencies:   None
 # =========================================================================
 
 # /////////////////////////////////////////////////////////////////////////
@@ -45,7 +45,9 @@ esac
 # // Variables
 # /////////////////////////////////////////////////////////////////////////
 
-:  # no-op, currently no variables
+if test -n "$(echo $0 | grep bash)"; then
+  HTB_RUNS_IN_BASH=1
+fi
 
 # /////////////////////////////////////////////////////////////////////////
 # // Functions
@@ -62,7 +64,7 @@ esac
 # |  None
 # +------------------------------------------------------------------------
 
-function psg()
+psg()
 {
   case $(uname) in
     Linux)
@@ -71,7 +73,9 @@ function psg()
       ps -axj | grep -i "$@" ;;
   esac
 }
-export -f psg
+if test -n "$HTB_RUNS_IN_BASH"; then
+  export -f psg
+fi
 
 # +------------------------------------------------------------------------
 # | Processes a LaTeX source file, converts the result to a .pdf and and opens
@@ -85,7 +89,7 @@ export -f psg
 # |  * 1: Error
 # +------------------------------------------------------------------------
 
-function _la1()
+_la1()
 {
   if test $# -eq 0; then
     echo Argument is missing
@@ -106,7 +110,9 @@ function _la1()
     open "$1".pdf
   fi
 }
-export -f _la1
+if test -n "$HTB_RUNS_IN_BASH"; then
+  export -f _la1
+fi
 
 # +------------------------------------------------------------------------
 # | Processes a LaTeX source file, converts the result to a .pdf and and opens
@@ -120,7 +126,7 @@ export -f _la1
 # |  * 1: Error
 # +------------------------------------------------------------------------
 
-function _la2()
+_la2()
 {
   if test $# -eq 0; then
     echo Argument is missing
@@ -137,7 +143,9 @@ function _la2()
     open "$1".pdf
   fi
 }
-export -f _la2
+if test -n "$HTB_RUNS_IN_BASH"; then
+  export -f _la2
+fi
 
 # +------------------------------------------------------------------------
 # | Remove temporary files created by LaTeX.
@@ -150,7 +158,7 @@ export -f _la2
 # |  * 1: Error
 # +------------------------------------------------------------------------
 
-function _lclr()
+_lclr()
 {
   if test $# -eq 0; then
     echo Argument is missing
@@ -162,4 +170,6 @@ function _lclr()
     fi
   fi
 }
-export -f _lclr
+if test -n "$HTB_RUNS_IN_BASH"; then
+  export -f _lclr
+fi

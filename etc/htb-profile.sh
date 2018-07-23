@@ -16,7 +16,7 @@
 # |
 # | Arguments:      None
 # | Exit codes:     None
-# | Dependencies:   bash (export -f)
+# | Dependencies:   None
 # =========================================================================
 
 
