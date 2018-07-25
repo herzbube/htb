@@ -1,0 +1,122 @@
+# -*- mode: sh; sh-basic-offset: 3; indent-tabs-mode: nil; -*-
+# vim: set filetype=sh sw=3 sts=3 expandtab autoindent:
+#
+# tar handler script for backupninja
+
+getconf backupname      `hostname --fqdn`
+getconf backupdir       /var/backups/`hostname --fqdn`
+getconf absolute_names  no
+getconf date_suffix     yes
+getconf compress        bzip
+getconf includes        "/etc /home /usr/local"
+getconf excludes        "/tmp /proc /dev /sys /net /misc /media /srv /selinux"
+
+getconf TAR             `which tar`
+getconf EXTENSION       tar
+getconf DATE            `which date`
+getconf DATEFORMAT      "%Y.%m.%d-%H%M"
+
+# See if vservers are configured
+if [ "$vservers" = "yes" ]
+then
+   warning "vservers enabled, but tar does not support it!"
+fi
+
+if [ ! -d "$backupdir" ]
+then
+   mkdir -p "$backupdir" || fatal "Can not make directory $backupdir"
+fi
+
+if [ ! -w "$backupdir" ]
+then
+   fatal "Directory $backupdir is not writable"
+fi
+
+## DO IT #################################################
+#
+# here we grab a list of the packages installed and removed.
+#
+
+case $compress in
+   "compress")
+      compress_option="-Z"
+      EXTENSION="tar.compress"
+      ;;
+   "gzip")
+      compress_option="-z"
+      EXTENSION="tgz"
+      ;;
+   "bzip")
+      compress_option="-j"
+      EXTENSION="tar.bz2"
+      ;;
+   "none")
+      compress_option=""
+      ;;
+   *)
+      warning "Unknown compress filter ($tar_compress)"
+      compress_option=""
+      EXTENSION="tgz"
+      ;;
+esac
+
+case $absolute_names in
+   "yes")
+      absolute_names_option="--absolute-names"
+      ;;
+   "no")
+      absolute_names_option=""
+      ;;
+   *)
+      warning "Unknown absolute_names value ($absolute_names)"
+      absolute_names_option=""
+      ;;
+esac
+
+case $date_suffix in
+   "yes")
+      DATE_SUFFIX="-"`$DATE "+$DATEFORMAT"`
+      ;;
+   "no")
+      DATE_SUFFIX=""
+      ;;
+   *)
+      warning "Unknown date_suffix value ($date_suffix)"
+      DATE_SUFFIX=""
+      ;;
+esac
+
+TAR_FILE_BASENAME="$backupdir/$backupname$DATE_SUFFIX"
+TAR_FILE="$TAR_FILE_BASENAME.$EXTENSION"
+
+exclude_options=""
+for i in $excludes
+do
+   exclude_options="$exclude_options --exclude $i"
+done
+
+debug "Running backup: " $TAR -c -p -v $compress_option $absolute_names_option $exclude_options \
+   -f "$TAR_FILE" \
+   $includes
+
+if test ! $test; then
+  if test -z "$absolute_names_option"; then
+    cd /
+    [ $? -ne 0 ] && fatal "Failed to change working directory to /"
+  fi
+
+  $TAR -c -p -v $compress_option $absolute_names_option $exclude_options \
+     -f "$TAR_FILE" \
+     $includes \
+     > "$TAR_FILE_BASENAME.list" \
+     2> "$TAR_FILE_BASENAME.err"
+  TAR_RESULT=$?
+
+  # Must switch back to original working directory even if
+  # tar failed, otherwise master program may run into trouble
+  if test -z "$absolute_names_option"; then
+    cd - >/dev/null
+  fi
+
+  [ $TAR_RESULT -ne 0 ] && fatal "Tar backup failed"
+fi
