@@ -16,7 +16,7 @@
 # |
 # | Arguments:      None
 # | Exit codes:     None
-# | Dependencies:   None
+# | Dependencies:   bash (export -f)
 # =========================================================================
 
 
@@ -33,6 +33,16 @@ if test -f "$MACPORTS_BASE_DIR/bin/port"; then
   for MACPORTS_DIR in $MACPORTS_BASE_DIR/bin $MACPORTS_BASE_DIR/sbin; do
     if test -z "$(echo $PATH | fgrep "$MACPORTS_DIR")"; then
       PATH="$MACPORTS_DIR:$PATH"
+    fi
+  done
+fi
+
+# Set up Homebrew environment
+HOMEBREW_BASE_DIR="/usr/local"
+if test -f "$HOMEBREW_BASE_DIR/bin/brew"; then
+  for HOMEBREW_DIR in $HOMEBREW_BASE_DIR/bin $HOMEBREW_BASE_DIR/sbin; do
+    if test -z "$(echo $PATH | fgrep "$HOMEBREW_DIR")"; then
+      PATH="$HOMEBREW_DIR:$PATH"
     fi
   done
 fi
