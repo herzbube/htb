@@ -536,7 +536,6 @@ BEGIN {
 }
 EOF
   cat "$new_site_settings_file.org" | awk -f "$tmp_file" drupal_db_user_name="$drupal_db_user_name" drupal_db_user_passwd="$drupal_db_user_passwd" new_drupal_db_name="$new_drupal_db_name" >"$new_site_settings_file"
-  rm -f "$tmp_file"
   echo "    Restricting file permissions"
   chown www-data "$new_site_settings_file"
   chmod 400 "$new_site_settings_file"
@@ -554,6 +553,8 @@ EOF
     mv "$old_site_settings_file" "$old_site_settings_file.old"
     cat "$old_site_settings_file.old" | awk -f "$tmp_file" drupal_db_user_name="$drupal_db_user_name" drupal_db_user_passwd="$drupal_db_user_passwd" new_drupal_db_name="$new_drupal_db_name" >"$old_site_settings_file"
   fi
+
+  rm -f "$tmp_file"
 
   # ----------
   echo "  Granting privileges on $new_drupal_db_name"
