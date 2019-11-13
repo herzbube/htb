@@ -480,7 +480,7 @@ function output(outputMode, outputValue)
   else
   {
     print \$0 "" FS "" outputValue
-    if (outputValue < 0) { next }
+    if (outputValue < 0) { exit }
   }
 }
 EOF
