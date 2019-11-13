@@ -49,6 +49,15 @@ if test -n "$(echo $0 | grep bash)"; then
   HTB_RUNS_IN_BASH=1
 fi
 
+# Required on macOS so that the Homebrew-installed GnuPG is capable of
+# obtaining a pass phrase from the user. Without this, a command line
+# such as
+#   echo "test" | gpg --clearsign
+# will fail with this rather cryptic message:
+#   Inappropriate ioctl for device
+GPG_TTY=$(tty)
+export GPG_TTY
+
 # /////////////////////////////////////////////////////////////////////////
 # // Functions
 # /////////////////////////////////////////////////////////////////////////
