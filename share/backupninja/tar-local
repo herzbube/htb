@@ -95,7 +95,7 @@ do
    exclude_options="$exclude_options --exclude $i"
 done
 
-debug "Running backup: " $TAR -c -p -v $compress_option $absolute_names_option $exclude_options \
+debug "Running backup: " $TAR -c -p -v --warning=no-file-changed $compress_option $absolute_names_option $exclude_options \
    -f "$TAR_FILE" \
    $includes
 
@@ -105,12 +105,20 @@ if test ! $test; then
     [ $? -ne 0 ] && fatal "Failed to change working directory to /"
   fi
 
-  $TAR -c -p -v $compress_option $absolute_names_option $exclude_options \
+  # --warning=no-file-changed suppresses the warning "file changed as we read it".
+  # So after the tar archive is complete the file content on disk and the file
+  # content in the archive are different. We don't treat this as an error, we
+  # assume that the changed file content will be in the next backup.
+  $TAR -c -p -v --warning=no-file-changed $compress_option $absolute_names_option $exclude_options \
      -f "$TAR_FILE" \
      $includes \
      > "$TAR_FILE_BASENAME.list" \
      2> "$TAR_FILE_BASENAME.err"
   TAR_RESULT=$?
+  # Even though we suppressed the "file changed as we read it" warning, tar
+  # still returns with exit code 1. Since we don't treat this as an error we
+  # have to map exit code 1 to 0.
+  [ $TAR_RESULT -eq 1 ] && TAR_RESULT=0
 
   # Must switch back to original working directory even if
   # tar failed, otherwise master program may run into trouble
