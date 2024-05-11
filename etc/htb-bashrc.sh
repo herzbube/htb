@@ -10,7 +10,7 @@
 # |                 Places to invoke this script are
 # |                 - For the login shell: ~/.profile (this is required because
 # |                   login shells do not execute ~/.bashrc)
-# |                 - For sub-shells: ~/.bashrc
+# |                 - For sub-shells: ~/.bashrc or ~/.zshrc
 # |
 # |                 Note that this is not a regular script! It must be invoked
 # |                 by sourcing it (dot syntax, or the source shell builtin).
@@ -45,8 +45,10 @@ esac
 # // Variables
 # /////////////////////////////////////////////////////////////////////////
 
-if test -n "$(echo $0 | grep bash)"; then
+if test -n "$BASH"; then
   HTB_RUNS_IN_BASH=1
+elif test -n "$ZSH_NAME"; then
+  HTB_RUNS_IN_ZSH=1
 fi
 
 # Required on macOS so that the Homebrew-installed GnuPG is capable of
@@ -181,4 +183,15 @@ _lclr()
 }
 if test -n "$HTB_RUNS_IN_BASH"; then
   export -f _lclr
+fi
+
+# /////////////////////////////////////////////////////////////////////////
+# // Other settings
+# /////////////////////////////////////////////////////////////////////////
+
+# Make sure to use the Emacs keymap in zsh to support the same key bindings
+# as in bash (e.g. Ctrl+A / Ctrl+E go to line start/end, Ctrl+R searches the
+# command history).
+if test -n "$HTB_RUNS_IN_ZSH"; then
+  bindkey -e
 fi

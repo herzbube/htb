@@ -60,14 +60,16 @@ This lets you run HTB scripts without having to specify a full path every time.
 But the HTB also provides shell aliases and shell functions that you might find
 useful. If you are interested in these, you should do the following two things:
 
-1) Add the following line to your ~/.profile (or the system-wide /etc/profile)
-to integrate HTB aliases and functions into your login shell:
+1) Add the following line to your ~/.profile (for bash) or ~/.zprofile (for zsh), or the
+respective system-wide files /etc/profile or /etc/zsh/zprofile, to integrate HTB
+aliases and functions into your login shell:
 
   HTB_BASE_DIR=/path/to/htb-base-dir
   . $HTB_BASE_DIR/etc/htb-profile.sh
 
-2) Add the following line to your ~/.bashrc (or the system-wide
-/etc/bash.bashrc) to propagate the integration to subshells:
+2) Add the following line to your ~/.bashrc (for bash) or ~/.zshrc (for zsh), or the
+respective system-wide files /etc/bash.bashrc or /etc/zsh/zshrc, to propagate the
+integration to subshells:
 
   HTB_BASE_DIR=/path/to/htb-base-dir
   . $HTB_BASE_DIR/etc/htb-bashrc.sh
@@ -78,7 +80,7 @@ Notes
   htb-profile.sh already does this for you
 - htb-profile.sh automatically invokes htb-bashrc.sh to make aliases and
   functions available in the login shell
-- If you don't make the .bashrc modification, then aliases and functions are not
+- If you don't make the .bashrc / .zshrc modification, then aliases and functions are not
   available in subshells
 
 ----------------------------------------------------------------------
