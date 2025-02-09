@@ -10,19 +10,28 @@
 # |                 Maildir folders located in the top-level Maildir folder
 # |                 .Junk before counting. Rotation consists of:
 # |
-# |                 - Delete well-known Maildir folders below .Junk-statistics.
+# |                 - Check if the .Junk-statistics folder exists
+# |                   - No: Create the .Junk-statistics folder.
+# |                   - Yes: Abort rotation unless the rotation is forced
+# |                     (-f option). If the rotation is forced, then delete
+# |                     any well-known Maildir folders that already exist
+# |                     below .Junk-statistics.
 # |                 - Rename/move well-known Maildir folders below .Junk so
 # |                   they are then located below .Junk-statistics.
 # |                 - Create a new set of well-known Maildir folders below
 # |                   .Junk.
 # |
+# |                 If the .Junk-statistics folder already exists
+# |
 # | Arguments:      -h: Print a short help page
 # |                 -u <user>: Name of the user on whose Maildirs to operate.
 # |                 -d <days>: Number of days elapsed since last spam statistics.
 # |                 [-r]: If specified performs a rotation as described above.
+# |                 [-f]: If specified forces the rotation as described above.
 # |                 [-g <group>]: Name of the group which should own new
-# |                               Maildirs when performing rotation. Must be
-# |                               specified together with -r.
+# |                               Maildirs when performing rotation or
+# |                               initialization. If -r or -i is specified, this
+# |                               option must be specified as well.
 # |                 [-i]: Initialize by creating an empty set of Maildir
 # |                       folders below .Junk. This option can only be used
 # |                       instead of counting.
@@ -105,11 +114,17 @@ $HTB_USAGE_LINE
  -u <user>: Name of the user on whose Maildirs to operate
  -d <days>: Number of days elapsed since last spam statistics
  [-r]: If specified performs a rotation before counting. Rotation consistss of
-       1) Delete well-known Maildir folders below .Junk-statistics
+       1) Check if the .Junk-statistics folder exists
+          - No: Create the .Junk-statistics folder.
+          - Yes: Abort rotation unless the rotation is forced (-f option). If
+                 the rotation is forced, then delete any well-known Maildir
+                 folders that already exist below .Junk-statistics.
        2) Rename/move well-known Maildir folders from .Junk to .Junk-statistics
        3) Create new set of well-known Maildir folders below .Junk
+ [-f]: If specified forces the rotation (see description of -r).
  [-g <group>]: Name of the group which should own new Maildirs when performing
-               rotation. Must be specified together with -r.
+               rotation or initialization. If -r or -i is specified, this
+               option must be specified as well.
  [-i]: Initialize by creating an empty set of Maildir folders below .Junk.
        This option can only be used instead of counting.
 
@@ -492,7 +507,7 @@ case "$HTB_SCRIPT_DIR" in
   /*) ;;
   *)  HTB_SCRIPT_DIR="$(pwd)/$HTB_SCRIPT_DIR" ;;
 esac
-HTB_USAGE_LINE="$HTB_SCRIPT_NAME [-h] [-i] [-r -g <group>] -u <user> -d <days>"
+HTB_USAGE_LINE="$HTB_SCRIPT_NAME (-h | -i -u <user> -g <group> | [-r -g <group> [-f]] -u <user> -d <days>)"
 
 # Catch signals: 2=SIGINT (CTRL+C), 15=SIGTERM (simple kill)
 trap "HTB_CLEANUP_AND_EXIT 2" 2 15
@@ -515,8 +530,8 @@ MAILDIR_NAME_JUNK="Junk"
 MAILDIR_NAME_JUNKSTATISTICS="Junk-statistics"
 
 # Remaining variables and resources
-OPTSOK=hu:d:rg:i
-unset MAILDIR_OWNER_USER_NAME NUMBER_OF_DAYS_ELAPSED MAILDIR_OWNER_GROUP_NAME ROTATE INITIALIZE
+OPTSOK=hu:d:rfg:i
+unset MAILDIR_OWNER_USER_NAME NUMBER_OF_DAYS_ELAPSED MAILDIR_OWNER_GROUP_NAME ROTATE FORCE_ROTATE INITIALIZE
 
 # +------------------------------------------------------------------------
 # | Argument processing
@@ -537,6 +552,9 @@ do
       ;;
     r)
       ROTATE=1
+      ;;
+    f)
+      FORCE_ROTATE=1
       ;;
     g)
       MAILDIR_OWNER_GROUP_NAME="$OPTARG"
@@ -591,6 +609,14 @@ else
 
     if test ! -d "$MAILDIR_PATH_JUNK"; then
       HTB_CLEANUP_AND_EXIT 4 "Junk Maildir not found: $MAILDIR_PATH_JUNK"
+    fi
+
+    if test -d "$MAILDIR_PATH_JUNKSTATISTICS"; then
+      if test -z "$FORCE_ROTATE"; then
+        HTB_CLEANUP_AND_EXIT 4 "Junk statistics Maildir already exists - specify -f to force overwrite: $MAILDIR_PATH_JUNKSTATISTICS"
+      else
+        echo "Junk statistics Maildir already exists - overwriting contents because -f specified: $MAILDIR_PATH_JUNKSTATISTICS"
+      fi
     fi
   else
     if test -n "$MAILDIR_OWNER_GROUP_NAME"; then
