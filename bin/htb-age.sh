@@ -278,8 +278,8 @@ BEGIN {
   # Is unit valid?
   if (unit !~ /^[dmyhis]\$/) { output(dataSource, -1) }
   # Defaults for start and end date
-  if (length(startDate) == 0) { default[ 1 ] = "01.01.1970-00:00:00" }
-  if (length(endDate) == 0) { "date '+%d.%m.%Y-%H:%M:%S'" | getline default[ 2 ] }
+  if (length(startDate) == 0) { defaultValues[1] = "01.01.1970-00:00:00" }
+  if (length(endDate) == 0) { "date '+%d.%m.%Y-%H:%M:%S'" | getline defaultValues[2] }
 
   # Days per month
   dom[1] = 31; dom[2] = 28; dom[3] = 31; dom[4]  = 30; dom[5]  = 31; dom[6]  = 30
@@ -290,12 +290,12 @@ BEGIN {
   # Fill input fields
   # dataSource=0: Input is coming from file(s), dataSource=1: Input is coming
   # from startDate/endDate variables
-  if      (length( default[1] ) > 0) { dat[1] = default[1] }
-  else if (dataSource == 1)          { dat[1] = startDate }
-  else                               { dat[1] = \$startDate }
-  if      (length( default[2] ) > 0) { dat[2] = default[2] }
-  else if (dataSource == 1)          { dat[2] = endDate }
-  else                               { dat[2] = \$endDate }
+  if      (length( defaultValues[1] ) > 0) { dat[1] = defaultValues[1] }
+  else if (dataSource == 1)                { dat[1] = startDate }
+  else                                     { dat[1] = \$startDate }
+  if      (length( defaultValues[2] ) > 0) { dat[2] = defaultValues[2] }
+  else if (dataSource == 1)                { dat[2] = endDate }
+  else                                     { dat[2] = \$endDate }
 
   # Streamline everything to the same format
   for (i = 1; i <= 2; i++)
