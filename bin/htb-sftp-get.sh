@@ -378,6 +378,8 @@ BATCH_SCRIPT_FILE="$HTB_TMP_DIR/$HTB_SCRIPT_NAME.batch-script"
 BATCH_SCRIPT_OUTPUT_FILE="$HTB_TMP_DIR/$HTB_SCRIPT_NAME.batch-script-output"
 REQUIRED_TOOLS="sshpass sftp uname sed grep"
 SSH_OPTION_DISABLE_BATCH_MODE="-oBatchMode=no"
+DATE_FORMAT="+%Y-%m-%d %H:%M:%S"
+SEPARATOR_LINE="--------------------------------------------------------------------------------"
 unset DISTINCT_REGEX LOCAL_FILE_NAME_REGEX PASSWORD_FILE_PATH PASSWORD_ENVVAR_NAME
 
 if test -z "$HOSTNAME"; then
@@ -466,6 +468,13 @@ fi
 # | Main program processing
 # +------------------------------------------------------------------------
 
+# Print "begin" message with timestamp
+BEGIN_DATE="$(date "$DATE_FORMAT")"
+BEGIN_LINE="Begin copy $BEGIN_DATE"
+echo "$SEPARATOR_LINE"
+echo "$BEGIN_LINE"
+echo "$SEPARATOR_LINE"
+
 echo "Checking for presence of required tools ..."
 for REQUIRED_TOOL in $REQUIRED_TOOLS; do
   which "$REQUIRED_TOOL" >/dev/null
@@ -538,5 +547,13 @@ echo "Transferring files ..."
 EXECUTE_SFTP "Failed to transfer files"
 
 echo "Files transferred successfully"
+
+# Print "end" message with timestamp
+END_DATE="$(date "$DATE_FORMAT")"
+END_LINE="End copy $END_DATE"
+echo "$SEPARATOR_LINE"
+echo "$END_LINE"
+echo "$SEPARATOR_LINE"
+
 HTB_CLEANUP_AND_EXIT 0
 
